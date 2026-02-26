@@ -1,4 +1,4 @@
-<h1 align="center"><a href="#"><img src="Assets/icon_soy.png" height="45" align="absmiddle" alt="icon"></a> Shape-of-You: Fused Gromov-Wasserstein Optimal Transport for Semantic Correspondence in-the-Wild</h1>
+<h1 align="center"><a href="#"><img src="icon/soy.png" height="45" align="absmiddle" alt="icon"></a> Shape-of-You: Fused Gromov-Wasserstein Optimal Transport for Semantic Correspondence in-the-Wild</h1>
 
 <div align="center">
   Jiin Im · Sisung Liu · Je Hyeong Hong
