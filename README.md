@@ -11,8 +11,7 @@
 
 <div align="center">
   <a href="#"><img src="https://img.shields.io/badge/Project-Page-blue?style=flat-square" alt="Project Page"></a>
-  <a href="#"><img src="https://img.shields.io/badge/arXiv-PDF-b31b1b?style=flat-square" alt="Paper"></a>
-  <a href="#"><img src="https://img.shields.io/badge/Code-Coming%20Soon-yellow?style=flat-square" alt="Code"></a>
+  <a href="https://arxiv.org/pdf/2603.11618"><img src="https://img.shields.io/badge/arXiv-PDF-b31b1b?style=flat-square" alt="Paper"></a>
 </div>
 
 ---
