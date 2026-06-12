@@ -1,0 +1,40 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.pytest_cache/
+.mypy_cache/
+
+# Environments
+.env
+.venv/
+venv/
+env/
+
+# Notebooks
+.ipynb_checkpoints/
+
+# Data and generated artifacts
+data/
+saved/
+src/eval/results/
+results/
+outputs/
+logs/
+wandb/
+
+# Checkpoints and downloaded weights
+weight/
+weights/
+ckpts/
+checkpoints/
+*.pth
+*.pt
+*.ckpt
+*.tar.gz
+
+# OS/editor files
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/

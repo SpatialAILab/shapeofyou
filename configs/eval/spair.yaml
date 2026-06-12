@@ -1,0 +1,9 @@
+NOTE: 'eval_spair'
+DO_EVAL: true
+SOFT_EVAL: true
+SOFT_EVAL_WINDOW: 5
+TEST_SAMPLE: 0
+COMPUTE_GEOAWARE_METRICS: false
+KPT_RESULT: true
+DATASET_DIR_SPAIR: '../../../data/SPair-71k'
+NOT_WANDB: true
