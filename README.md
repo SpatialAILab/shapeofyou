@@ -18,7 +18,9 @@
 
 This repository is the official implementation of **"Shape-of-You: Fused Gromov-Wasserstein Optimal Transport for Semantic Correspondence in-the-Wild"**.
 
-This preliminary code release focuses on **zero-shot evaluation**. Training code and trained-checkpoint evaluation will be released in a future update.
+This preliminary code release focuses on **zero-shot evaluation**.
+The repository is currently undergoing cleanup and validation. We are actively verifying the installation process and evaluation pipeline across different environments. Additional fixes and documentation updates may be provided during this period.
+Training code and trained-checkpoint evaluation will be released in a future update.
 
 ## Introduction
 
