@@ -1,0 +1,65 @@
+{
+    "name": "SPair-71k",
+    "training_name": "masking_ot_train",
+    "n_gpu": 1,
+    "gpu_id": 0,
+    "seed": 12121,
+    "wandb": false,
+    "save_dir": "saved/",
+    "arch": {
+        "type": "AggregationNetwork",
+        "args": {
+            "feature_dims": [
+                640,
+                1280,
+                1280,
+                768
+            ],
+            "projection_dim": 1536
+        }
+    },
+    "dataset": {
+        "type": "SPair_Dataset",
+        "args": {
+            "data_dir": "../data/SPair-71k",
+            "category": "all"
+        }
+    },
+    "data_loader": {
+        "type": "SPair_DataLoader",
+        "args": {
+            "batch_size": 32,
+            "descriptor": "sd_dino",
+            "base_input_dir": "../data/SPair-71k/PseudoCorrespondence",
+            "spectral_inputs": false,
+            "pseudo_labeling_name": "masking_ot_train",
+            "top_k": 3,
+            "bidirectional": true,
+            "bidirectional_symmetric": true,
+            "label_update": false
+        }
+    },
+    "optimizer": {
+        "type": "AdamW",
+        "args": {
+            "lr": 0.005,
+            "weight_decay": 0.001
+        }
+    },
+    "lr_scheduler": {
+        "type": "OneCycleLR",
+        "args": {
+            "max_lr": 0.005,
+            "total_steps": 200001,
+            "pct_start": 0.3
+        }
+    },
+    "trainer": {
+        "epochs": 20,
+        "save_dir": "saved/",
+        "verbosity": 2,
+        "sparse_loss": "soft_supcon",
+        "beta": 0.3,
+        "ot_iters": 100
+    }
+}

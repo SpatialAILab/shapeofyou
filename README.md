@@ -18,9 +18,8 @@
 
 This repository is the official implementation of **"Shape-of-You: Fused Gromov-Wasserstein Optimal Transport for Semantic Correspondence in-the-Wild"**.
 
-This preliminary code release focuses on **zero-shot evaluation**.
-The repository is currently undergoing cleanup and validation. We are actively verifying the installation process and evaluation pipeline across different environments. Additional fixes and documentation updates may be provided during this period.
-Training code and trained-checkpoint evaluation will be released in a future update.
+This initial code release includes **zero-shot evaluation**, **Shape-of-You best checkpoint evaluation**, and **training code**.
+The repository is currently undergoing cleanup and validation. We are actively verifying the installation process, evaluation pipeline, and training entrypoint across different environments. Additional fixes and documentation updates may be provided during this period.
 
 ## Introduction
 
@@ -32,17 +31,21 @@ The current release is organized for:
 - Preparing SPair-71k.
 - Extracting DINOv2 + Stable Diffusion features.
 - Extracting SAM masks.
-- Extracting VGGT-based 3D points.
+- Lifting 3D points with VGGT.
 - Running zero-shot Gromov-Wasserstein (GW) linearization evaluation.
+- Running evaluation with the Shape-of-You best checkpoint.
+- Launching the SPair-71k training pipeline.
 
 The repository layout is:
 
 - `src/eval/` - preprocessing and zero-shot evaluation:
   - `preprocess_map.py`: DINOv2 + SD feature extraction
-  - `preprocess_mask_sam.py`: SAM-based mask extraction
-  - `evaluation.py`: zero-shot GW-based correspondence evaluation
-- `src/vggt/` - project-specific scripts for extracting 3D points with VGGT.
-- `configs/eval/` - YAML config for zero-shot evaluation.
+  - `preprocess_mask_sam.py`: SAM mask extraction
+  - `evaluation.py`: zero-shot GW correspondence evaluation
+- `src/vggt/` - project-specific scripts for lifting 3D points with VGGT.
+- `src/train/` - SPair-71k training code.
+- `configs/eval/` - YAML config for zero-shot and Shape-of-You checkpoint evaluation.
+- `configs/train/` - JSON config for training.
 - `scripts/` - dataset download helper scripts.
 - `../data/` - user-created directory for SPair-71k and all precomputed files.
 
@@ -57,7 +60,7 @@ We conduct all experiments with the following environment:
 - PyTorch 2.0.1 and torchvision 0.15.2
 - Linux (Ubuntu 20.04/22.04) with NVIDIA GPUs
 
-A conda-based setup is as follows:
+Set up the environment with conda as follows:
 
 ```bash
 conda create -n shapeofyou python=3.10
@@ -111,11 +114,11 @@ python preprocess_mask_sam.py
 This script:
 - Loads the SAM checkpoint from `weight/sam_vit_h_4b8939.pth`,
 - Computes object masks for SPair-71k images, and
-- Saves them to the mask directory used by zero-shot evaluation.
+- Saves them to the mask directory used by evaluation.
 
 ### VGGT Point Extraction
 
-Our point extraction scripts use VGGT from the official `facebookresearch/vggt` repository.
+Our point lifting scripts use VGGT from the official `facebookresearch/vggt` repository.
 
 ```bash
 pip install git+https://github.com/facebookresearch/vggt.git
@@ -124,11 +127,11 @@ cd src/vggt
 bash extract_point.sh
 ```
 
-The `extract_point.py` and `extract_point.sh` files in this repository are project-specific wrappers for SPair-71k. The VGGT implementation itself is provided by the official repository above. This script runs VGGT on SPair-71k and saves 3D point sets / geometry to disk.
+The `extract_point.py` and `extract_point.sh` files in this repository are project-specific wrappers for SPair-71k. The VGGT implementation itself is provided by the official repository above. This script lifts SPair-71k image pairs with VGGT and saves 3D point sets / geometry to disk.
 
 ## Zero-shot Evaluation
 
-Evaluation is handled by `src/eval/evaluation.py`. The provided config runs zero-shot GW linearization without loading a trained SoY checkpoint.
+Evaluation is handled by `src/eval/evaluation.py`. The provided config runs zero-shot GW linearization without loading the Shape-of-You best checkpoint.
 
 ```bash
 cd src/eval
@@ -138,16 +141,47 @@ python evaluation.py --config ../../configs/eval/spair.yaml
 
 Conceptually, this mode:
 1. Uses precomputed DINOv2 + SD feature maps and SAM masks.
-2. Optionally uses VGGT-derived geometry in the matching cost.
+2. Optionally uses VGGT-lifted geometry in the matching cost.
 3. Computes a soft correspondence matrix through linearized Gromov-Wasserstein matching.
 4. Converts the correspondence into keypoint matches and reports PCK and related metrics.
+
+### Shape-of-You Best Checkpoint Evaluation
+
+Download the Shape-of-You best checkpoint asset and place it under `checkpoints/`. The optional `shapeofyou_best.json` file records the training config for the released checkpoint.
+
+```bash
+mkdir -p checkpoints
+# place shapeofyou_best.pth at checkpoints/shapeofyou_best.pth
+```
+
+Then run evaluation with the Shape-of-You aggregation network:
+
+```bash
+cd src/eval
+
+python evaluation.py --config ../../configs/eval/shapeofyou_best.yaml
+```
+
+For zero-shot evaluation, use `../../configs/eval/spair.yaml`, which omits `LOAD` and keeps the dummy-network behavior.
+
+## Training
+
+The training entrypoint is provided for SPair-71k with precomputed DINOv2 + Stable Diffusion features, SAM masks, VGGT-lifted 3D points, and generated pseudo correspondences.
+
+From the repository root:
+
+```bash
+python src/train/train_sc.py --config configs/train/shapeofyou.json
+```
+
+Training outputs are written under `saved/`. W&B logging is disabled by default in the provided training config.
 
 ## Roadmap
 
 - [x] Release paper on arXiv
 - [x] Release zero-shot evaluation code
-- [ ] Release trained-checkpoint evaluation
-- [ ] Release training code
+- [x] Release Shape-of-You best checkpoint evaluation
+- [x] Release training code
 
 ## Citation
 

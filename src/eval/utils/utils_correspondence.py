@@ -466,3 +466,44 @@ def forward_feats(aggre_net,img_path_1,img_dir,feature_dir, sd_and_dino=False, o
         img1_desc=img1_desc[0,0]
     return img1_desc, mask1
 
+def select_mutual_anchors(
+    Z, num_anchors,
+    vertices_s=None, vertices_t=None,
+    q=0.01  # quantile for eps
+):
+    Hs, Ht = Z.shape
+    argmax_t = Z.argmax(dim=1)   # [Hs]
+    argmax_s = Z.argmax(dim=0)   # [Ht]
+
+    i_idx = torch.arange(Hs, device=Z.device)
+    j_idx = argmax_t
+    i_prime = argmax_s[j_idx]
+
+    # distance
+    if vertices_s is not None:
+        dists = (vertices_s[i_idx] - vertices_s[i_prime]).norm(dim=-1)
+    else:
+        dists = (i_idx - i_prime).abs().float()
+
+    # data-driven eps
+    eps = torch.quantile(dists, q)   # very small tolerance
+
+    mask = dists <= eps
+    anchors_s = i_idx[mask]
+    anchors_t = j_idx[mask]
+    scores = Z[anchors_s, anchors_t]
+
+    if anchors_s.numel() == 0:
+        # fallback: relax eps a bit
+        eps = torch.quantile(dists, min(q*2, 0.5))
+        mask = dists <= eps
+        anchors_s = i_idx[mask]
+        anchors_t = j_idx[mask]
+        scores = Z[anchors_s, anchors_t]
+
+    if anchors_s.numel() == 0:
+        flat_idx = torch.topk(Z.view(-1), k=num_anchors).indices
+        anchors_s = flat_idx // Ht
+        anchors_t = flat_idx % Ht
+        return anchors_s, anchors_t
+

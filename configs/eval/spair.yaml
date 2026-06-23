@@ -1,9 +1,28 @@
-NOTE: 'eval_spair'
+NOTE: 'zero_shot_linearization'
 DO_EVAL: true
-SOFT_EVAL: true
-SOFT_EVAL_WINDOW: 5
+DUMMY_NET: true
+EVAL_DATASET: 'spair'
 TEST_SAMPLE: 0
-COMPUTE_GEOAWARE_METRICS: false
+TOTAL_SAVE_RESULT: 0
 KPT_RESULT: true
-DATASET_DIR_SPAIR: '../../../data/SPair-71k'
 NOT_WANDB: true
+
+DATASET_DIR_SPAIR: '../../../data/SPair-71k'
+DATASET_DIR_IN3D: '../../../data/IN3D/imagenet3d_0530'
+DATASET_DIR_PF_PASCAL: '../../../data/PF-dataset-PASCAL'
+DATASET_DIR_AP10K: '../../../data/ap-10k'
+
+# Sinkhorn and optimization settings
+MASK: true
+SINKHORN_ITER: 100
+UOT: true
+ANCHOR: true
+alpha: 0.7
+num_anchors: 64
+kl_div: 0.75
+DISTANCE: '3D'
+MODEL_3D: 'VGGT'
+SAVE_NAME: 'FUSED_UOT_SYSTEMATIC_EVAL'
+
+# Evaluation options
+SOFT_EVAL: false

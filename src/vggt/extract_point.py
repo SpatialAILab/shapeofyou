@@ -62,8 +62,7 @@ def save_prediction_npz(prediction_dict, save_path_base):
 
 
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser(description="Generate point clouds and predictions from images using VGGT.")
-    parser.add_argument("--dataset_name", type=str, required=True, choices=['SPair-71k', 'DensePose-LVIS', 'Animodel'])
+    parser = argparse.ArgumentParser(description="Generate SPair-71k point predictions from image pairs using VGGT.")
     parser.add_argument("--image_dir", type=str, required=True)
     parser.add_argument("--save_dir", type=str, required=True)
     parser.add_argument("--category", type=str)
@@ -86,57 +85,32 @@ if __name__ == "__main__":
 
     image_paths_to_process = []
 
-    if args.dataset_name == 'SPair-71k':
-        names = []
-        if not all([args.pair_dir, args.category]):
-            raise ValueError("For SPair-71k, --pair_dir and --category are required.")
-        
-        output_pc_dir = os.path.join(args.save_dir, 'PartialPCs', args.mode, args.category)
+    names = []
+    if not all([args.pair_dir, args.category]):
+        raise ValueError("For SPair-71k, --pair_dir and --category are required.")
 
-        json_files = [f for f in os.listdir(os.path.join(args.pair_dir, args.mode)) if f.endswith('.json')]
-        for json_file in json_files:
-            with open(os.path.join(args.pair_dir, args.mode, json_file)) as f:
-                pair_data = json.load(f)
-            if pair_data['category'] == args.category:
-                image_paths_to_process.append((
-                    os.path.join(args.image_dir, args.category, pair_data['src_imname']),
-                    os.path.join(args.image_dir, args.category, pair_data['trg_imname']),
-                ))
-                names.append(json_file.split(':')[0])
+    output_pc_dir = os.path.join(args.save_dir, 'PartialPCs', args.mode, args.category)
 
-    elif args.dataset_name == 'DensePose-LVIS':
-        if not args.category:
-            raise ValueError("For DensePose-LVIS, --category is required.")
-        
-        output_pc_dir = os.path.join(args.save_dir, 'PartialPCs', args.category)
-        category_image_dir = os.path.join(args.image_dir, args.category)
-        image_paths_to_process = [os.path.join(category_image_dir, f)
-                                  for f in sorted(os.listdir(category_image_dir))
-                                  if f.lower().endswith(('.png', '.jpg', '.jpeg'))]
-
-    elif args.dataset_name == 'Animodel':
-        output_pc_dir = os.path.join(args.save_dir, 'PartialPCs')
-        image_paths_to_process = [os.path.join(args.image_dir, f)
-                                  for f in sorted(os.listdir(args.image_dir))
-                                  if f.lower().endswith(('.png', '.jpg', '.jpeg'))]
+    json_files = [f for f in os.listdir(os.path.join(args.pair_dir, args.mode)) if f.endswith('.json')]
+    for json_file in json_files:
+        with open(os.path.join(args.pair_dir, args.mode, json_file)) as f:
+            pair_data = json.load(f)
+        if pair_data['category'] == args.category:
+            image_paths_to_process.append((
+                os.path.join(args.image_dir, args.category, pair_data['src_imname']),
+                os.path.join(args.image_dir, args.category, pair_data['trg_imname']),
+            ))
+            names.append(json_file.split(':')[0])
 
     os.makedirs(output_pc_dir, exist_ok=True)
-    num = 0
 
-    for item in tqdm(image_paths_to_process, desc=f"Processing '{args.dataset_name}'"):
-        if args.dataset_name == 'SPair-71k':
-            save_base = os.path.join(output_pc_dir, names[num])
-        else:
-            item_path = item[0] if isinstance(item, tuple) else item
-            save_base = os.path.join(output_pc_dir, os.path.splitext(os.path.basename(item_path))[0])
+    for idx, item in enumerate(tqdm(image_paths_to_process, desc="Processing SPair-71k")):
+        save_base = os.path.join(output_pc_dir, names[idx])
 
         if os.path.isfile(save_base + ".npz"):
-            if args.dataset_name == 'SPair-71k':
-                num += 1
             continue
-            
-        is_pair = isinstance(item, tuple)
-        current_image_paths = list(item) if is_pair else [item]
+
+        current_image_paths = list(item)
 
         images, _ = load_and_preprocess_images(current_image_paths, mode="pad", bbox_list=None, target_size=args.size)
         images = images.to(device)
@@ -163,7 +137,4 @@ if __name__ == "__main__":
 
         save_prediction_npz(predictions, save_base)
         
-        if args.dataset_name == 'SPair-71k':
-            num += 1
-
     print("\nPoint cloud extraction complete.")

@@ -13,7 +13,7 @@ from glob import glob
 import numpy as np
 import torch.nn.functional as F
 from preprocess_map import set_seed
-from model_utils.projection_network import DummyAggregationNetwork
+from model_utils.projection_network import AggregationNetwork, DummyAggregationNetwork
 import utils.utils_visualization as utils_visualization
 from utils.logger import get_logger, log_geo_stats, update_stats, update_geo_stats, log_weighted_pcks, load_config
 from utils.utils_geoware import AP10K_GEO_AWARE, AP10K_FLIP, SPAIR_GEO_AWARE, SPAIR_FLIP, SPAIR_FLIP_TRN, permute_indices, renumber_indices, flip_keypoints, renumber_used_points, optimized_kps_1_to_2
@@ -500,8 +500,7 @@ def main(args):
     args.AUGMENT_FLIP, args.AUGMENT_DOUBLE_FLIP, args.AUGMENT_SELF_FLIP = (1.0, 1.0, 0.25) if args.PAIR_AUGMENT else (0, 0, 0) # set different weight for different augmentation
     args.SAMPLE = None if args.SAMPLE == 0 else args.SAMPLE
     args.DO_EVAL = True
-    args.DUMMY_NET = True
-    args.LOAD = None
+    args.DUMMY_NET = args.LOAD is None
 
     exp_name = f'exp_{args.EXP_ID:04d}_{args.NOTE}'
     print(f'Experiment name: {exp_name}')
@@ -532,7 +531,21 @@ def main(args):
     
     logger.info(f'Saving results to {save_path} with {results_name}')
 
-    aggre_net = DummyAggregationNetwork()
+    if args.LOAD is not None:
+        aggre_net = AggregationNetwork(
+            feature_dims=[640, 1280, 1280, 768],
+            projection_dim=args.PROJ_DIM,
+            num_blocks=args.NUM_BLOCKS,
+            feat_map_dropout=args.FEAT_MAP_DROPOUT,
+        )
+        checkpoint = torch.load(args.LOAD, map_location=device)
+        if isinstance(checkpoint, dict) and 'state_dict' in checkpoint:
+            checkpoint = checkpoint['state_dict']
+        if isinstance(checkpoint, dict) and checkpoint and next(iter(checkpoint)).startswith('module.'):
+            checkpoint = {k[len('module.'):]: v for k, v in checkpoint.items()}
+        aggre_net.load_state_dict(checkpoint, strict=True)
+    else:
+        aggre_net = DummyAggregationNetwork()
     aggre_net.to(device)
 
     with torch.no_grad():

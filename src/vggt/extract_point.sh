@@ -11,7 +11,6 @@ for mode in trn val test; do
       echo "Processing category: $category_name in mode: $mode"
 
       python extract_point.py \
-        --dataset_name SPair-71k \
         --image_dir "$IMAGE_DIR" \
         --save_dir "$SAVE_DIR" \
         --category "$category_name" \
