@@ -671,7 +671,7 @@ class SPair_DataLoader(MyBaseDataLoader):
             trg_coords_all = coords.view(-1, 2)[trg_mask.view(-1)]
 
             # Top-k matches
-            actual_k = min(top_k, ot_plan.shape[1])  # 실제 사용 가능한 k 값으로 제한
+            actual_k = min(top_k, ot_plan.shape[1])  # Clamp to the available number of target candidates
 
             if top_k == 1:
                 # Keep original behavior for backward compatibility

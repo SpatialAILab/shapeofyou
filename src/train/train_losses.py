@@ -113,7 +113,7 @@ def get_sparse_contrastive_loss(
             loss_src2trg = -(soft_target * F.log_softmax(logits, dim=1)).sum(dim=1).mean()
             loss_trg2src = -(soft_target.t() * F.log_softmax(logits.t(), dim=1)).sum(dim=1).mean()
         else:
-            # ---- single mask: 기존 Ns×Nt 문제 유지 ----
+            # ---- single mask: keep the existing Ns x Nt formulation ----
             src_feats_sampled = src_feats[:, pseudo_label_src_coords[:, 1], pseudo_label_src_coords[:, 0]].T  # (Ns, C)
 
             trg_mask_flat = trg_mask.view(-1).to(torch.bool)
@@ -230,7 +230,7 @@ def get_sparse_contrastive_loss(
 
     elif sparse_loss == "soft_supcon":
         # Soft Supervised Contrastive Loss
-        # Hard positive mask에 OT 평면을 선형 혼합하여 soft positive 생성
+        # Build soft positives by linearly mixing the hard positive mask with the OT plan
         # soft_pos = (1 - beta) * hard_pos + beta * Q_ot
 
         if group_ids is None:
@@ -263,26 +263,26 @@ def get_sparse_contrastive_loss(
         sim_src2trg = (src_feats_norm @ trg_feats_norm.T) / temperature
         sim_trg2src = sim_src2trg.T
 
-        # Hard positive mask (같은 그룹, 자기 자신 제외)
+        # Hard positive mask (same group, excluding self-pairs)
         group_matrix = group_ids_valid.unsqueeze(0) == group_ids_valid.unsqueeze(1)
         mask_self = torch.eye(N, dtype=torch.bool, device=src_feats.device)
         hard_pos = (group_matrix & (~mask_self)).float()
 
-        # OT plane 계산
+        # Compute the OT plan
         with torch.no_grad():
             log_Q = get_ot_plan(src_feats_norm, trg_feats_norm, iters=ot_iters)
         Q_ot = torch.exp(log_Q).squeeze(0)  # (N, N)
 
-        # 자기 자신 제외
+        # Exclude self-pairs
         Q_ot = Q_ot * (~mask_self).float()
 
-        # Soft positive mask (선형 혼합)
+        # Soft positive mask (linear mixture)
         soft_pos = (1 - beta) * hard_pos + beta * Q_ot
 
         def soft_supcon_loss_one_way(sim_matrix, soft_pos_matrix):
             mask_valid = ~mask_self
 
-            # Log softmax over all valid pairs (자기 자신 제외)
+            # Log softmax over all valid pairs (excluding self-pairs)
             log_prob = sim_matrix - torch.logsumexp(
                 sim_matrix.masked_fill(~mask_valid, float('-inf')), dim=1, keepdim=True
             )
