@@ -913,6 +913,23 @@ class SPair_DataLoader(MyBaseDataLoader):
                 bidirectional_symmetric=self.bidirectional_symmetric
             )
 
+    def _compute_mask_threshold(self, category, image_name):
+        image_id = os.path.splitext(image_name)[0]
+        mask_path = os.path.join(self.dataset.data_dir, 'SAMMasks', category, f'{image_id}_mask.png')
+        if not os.path.isfile(mask_path):
+            raise FileNotFoundError(f'SAM mask not found for threshold computation: {mask_path}')
+
+        mask = np.asarray(Image.open(mask_path).convert('L')) > 0
+        ys, xs = np.nonzero(mask)
+        if len(xs) == 0 or len(ys) == 0:
+            raise ValueError(f'SAM mask is empty for threshold computation: {mask_path}')
+
+        bbox_width = xs.max() - xs.min() + 1
+        bbox_height = ys.max() - ys.min() + 1
+        mask_h, mask_w = mask.shape
+        mask_scale = self.resolution / max(mask_w, mask_h)
+        return max(bbox_width, bbox_height) * mask_scale
+
     def _load_kps_and_threshold_for_pair(self, pair_json_path):
         with open(pair_json_path) as f:
             data = json.load(f)
@@ -949,10 +966,9 @@ class SPair_DataLoader(MyBaseDataLoader):
             target_kps_filled = blank_kps.scatter(dim=0, index=trg_kp_ixs, src=target_raw_kps)
         else:
             target_kps_filled = blank_kps
-        target_kps, _, _, trg_scale = preprocess_kps_pad(target_kps_filled, data["trg_imsize"][0], data["trg_imsize"][1], self.resolution)
+        target_kps, _, _, _ = preprocess_kps_pad(target_kps_filled, data["trg_imsize"][0], data["trg_imsize"][1], self.resolution)
 
-        target_bbox = np.asarray(data["trg_bndbox"])
-        threshold = max(target_bbox[3] - target_bbox[1], target_bbox[2] - target_bbox[0]) * trg_scale
+        threshold = self._compute_mask_threshold(category, data["trg_imname"])
         kps = torch.stack([source_kps, target_kps])
         used_kps_indices, = torch.where(kps[:, :, 2].any(dim=0))
         kps = kps[:, used_kps_indices, :]
