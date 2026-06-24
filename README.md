@@ -183,6 +183,10 @@ Training outputs are written under `saved/`. W&B logging is disabled by default 
 - [x] Release Shape-of-You best checkpoint evaluation
 - [x] Release training code
 
+## Acknowledgements
+
+We thank the authors of [GeoAware-SC](https://github.com/Junyi42/GeoAware-SC) for releasing their open-source implementation, which served as a helpful reference for semantic correspondence evaluation and geometry-aware analysis.
+
 ## Citation
 
 ```bibtex
